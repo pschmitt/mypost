@@ -55,8 +55,8 @@ if __name__ == '__main__':
     consumed = c['client']['subscription']['balances'][0]['currentValue'] / 1024 / 1024
     available = c['client']['subscription']['balances'][0]['maxValue'] / 1024 / 1024
     # Init colorama
-    # Get the consumption color
     init()
+    # Get the consumption color
     color = get_color(consumed, available)
     print(
         colored('{0:.1f}'.format(consumed), color),
