@@ -11,8 +11,8 @@ from termcolor import colored
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('-u', '--username')
-    parser.add_argument('-p', '--password')
+    parser.add_argument('-u', '--username', required=True)
+    parser.add_argument('-p', '--password', required=True)
     return parser.parse_args()
 
 
