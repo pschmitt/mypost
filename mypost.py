@@ -30,13 +30,44 @@ def get_consumption(username, password):
         )
         # Get consumption data
         consumption = s.get(
-            url='https://www.mypost.lu/api/private/v0.1/client/infoconso',
+            url='https://www.mypost.lu/api/private/v0.3/client/infoconso',
             headers=headers
         )
         if consumption.ok:
             return consumption.json()
         else:
             consumption.raise_for_status()
+
+
+def extract_consumption_data(consumption, data_type):
+    d = [x for x in c['components'] if x['type'] == data_type]
+    assert d, 'Failed to extract {} consumption'.format(data_type)
+    data_consumption = d[0]
+    current = data_consumption['balance']['current']
+    available = data_consumption['balance']['maxValue']
+    unit = data_consumption['units']
+    return current, available, unit
+
+
+def extract_data_consumption(consumption):
+    return extract_consumption_data(consumption, 'DATA')
+
+
+def extract_sms_consumption(consumption):
+    return extract_consumption_data(consumption, 'SMS')
+
+
+def extract_mms_consumption(consumption):
+    return extract_consumption_data(consumption, 'MMS')
+
+
+def available_components(consumption):
+    return sorted([x['type'] for x in consumption['components']])
+
+
+def extract_out_of_bundle(consumption):
+    return consumption['outOfBundle']
+
 
 def get_color(consumed, available):
     ratio = consumed * 100 / available
@@ -51,15 +82,19 @@ def get_color(consumed, available):
 if __name__ == '__main__':
     args = parse_args()
     c = get_consumption(args.username, args.password)
-    # Get consumption data and convert to MB
-    consumed = c['client']['subscription']['balances'][0]['currentValue'] / 1024 / 1024
-    available = c['client']['subscription']['balances'][0]['maxValue'] / 1024 / 1024
     # Init colorama
     init()
-    # Get the consumption color
-    color = get_color(consumed, available)
-    print(
-        colored('{0:.1f}'.format(consumed), color),
-        '/{1:.1f} MB'.format(consumed, available),
-        sep=''
-    )
+    for component in available_components(c):
+        # Get consumption data and convert to MB
+        consumed, available, unit = extract_consumption_data(c, component)
+        if unit == 'GB':
+            available = available / (1024 * 1024)
+        elif unit == 'MB':
+            available = available / 1024
+        # Get the consumption color
+        color = get_color(consumed, available)
+        # Debug
+        # print(color, component, consumed, available)
+        col = colored('{0:.1f}'.format(consumed), color)
+        print('{}: {} / {:.1f}'.format(component, col, available))
+    print('Out of bundle: -{}€'.format(extract_out_of_bundle(c)))
