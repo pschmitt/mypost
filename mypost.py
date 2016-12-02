@@ -88,9 +88,11 @@ if __name__ == '__main__':
         # Get consumption data and convert to MB
         consumed, available, unit = extract_consumption_data(c, component)
         if unit == 'GB':
-            available = available / (1024 * 1024)
+            consumed = float(consumed) / (1024 * 1024)
+            available = float(available) / (1024 * 1024)
         elif unit == 'MB':
-            available = available / 1024
+            consumed = float(consumed) / 1024
+            available = float(available) / 1024
         # Get the consumption color
         color = get_color(consumed, available)
         # Debug
